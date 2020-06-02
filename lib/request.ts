@@ -5,22 +5,22 @@ export interface Response {
   body?: Uint8Array | Deno.Reader;
 }
 export class Request {
-    #serverRequest: ServerRequest;
+    serverRequest: ServerRequest;
     constructor(serverRequest: ServerRequest) {
-        this.#serverRequest = serverRequest;
+        this.serverRequest = serverRequest;
     }
     get method(): HTTPMethod{
-       return this.#serverRequest.method as HTTPMethod;
+       return this.serverRequest.method as HTTPMethod;
     }
     get url(): string {
-        return this.#serverRequest.url;
+        return this.serverRequest.url;
     }
 
     get headers(): Headers {
-        return this.#serverRequest.headers;
+        return this.serverRequest.headers;
     }
 
     get body(): Deno.Reader {
-        return this.#serverRequest.body;
+        return this.serverRequest.body;
     }
 }

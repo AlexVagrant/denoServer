@@ -25,7 +25,6 @@ export class Router {
 			if (url.includes('?')) {
 				url = url.split('?')[0];
 			}
-			console.log(item.path, url)
 			if (item.path === url && item.method === method) {
 				route = item.middleware;
 				break;

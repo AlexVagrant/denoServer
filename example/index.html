@@ -6,4 +6,25 @@
   <body>
     performance
   </body>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      ws = new WebSocket("ws://127.0.0.1:4000/ws");
+      ws.addEventListener("open", onConnectionOpen);
+      ws.addEventListener("message", onMessageReceived);
+    });
+
+    function onMessageReceived (event) {
+      console.log(event.data);
+      if (event.data === 'reload') {
+        console.log('reload');
+        //window.location.reload();
+      }
+    }
+    function onConnectionOpen(evt) {
+      console.log("Connection open ...");
+      ws.send("Hello WebSockets!");
+    };
+
+
+  </script>
 </html>
