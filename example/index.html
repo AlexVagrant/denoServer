@@ -5,6 +5,7 @@
   </head>
   <body>
     performance
+    performance
   </body>
   <script>
     window.addEventListener("DOMContentLoaded", () => {
@@ -17,14 +18,12 @@
       console.log(event.data);
       if (event.data === 'reload') {
         console.log('reload');
-        //window.location.reload();
+        window.location.reload();
       }
     }
     function onConnectionOpen(evt) {
       console.log("Connection open ...");
       ws.send("Hello WebSockets!");
     };
-
-
   </script>
 </html>

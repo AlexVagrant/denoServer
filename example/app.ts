@@ -2,14 +2,12 @@ import { App, Router, Context } from '../mod.ts';
 import {
   acceptWebSocket,
   acceptable,
-  isWebSocketPingEvent,
   isWebSocketCloseEvent,
   WebSocket,
 } from "https://deno.land/std/ws/mod.ts";
 const  app = new App();
 const router = new Router();
 const route = router.routes();
-let sock: any;
 // app.use(async (ctx) => {
 //     ctx.response.headers.set('Content-Type', 'application/json');
 //     ctx.cookie.setCookie({
@@ -31,26 +29,38 @@ let sock: any;
 
 
 async function chat(ws: WebSocket) {
-  for await (let msg of sock) {
-    console.log('sockmsg', msg)
+  const watcher = Deno.watchFs('./index.html');
+  let timer: undefined | number; 
+  for await (let msg of ws) {
+    for await (const event of watcher) {
+        if (timer) {
+          clearTimeout(timer)
+        }
+        timer = setTimeout(async () => {
+          console.log('reload')
+          await ws.send('reload')
+        }, 100)
+    }
     if (isWebSocketCloseEvent(msg)) {
       // Take out user from usersMap
       break;
     }
   }
 }
+
 router.get('/ws', async (ctx: Context) => {
   const { conn, r: bufReader, w: bufWriter, headers} = ctx.request.serverRequest;
   if (acceptable(ctx.request.serverRequest)) {
-    acceptWebSocket({
+    const sock = await acceptWebSocket({
       conn,
       bufReader,
       bufWriter,
       headers,
-    }).then(chat)
+    })
+    await chat(sock)
   }
-  
 })
+
 router.get('/', async (ctx: Context) => {
   const data = await Deno.readFile('./index.html');
   ctx.response.headers.set('Content-Type', 'text/html;charset=utf-8');
