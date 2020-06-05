@@ -1,6 +1,4 @@
-import { serve, Server, } from 'https://deno.land/std/http/server.ts';
-import { assert } from "https://deno.land/std/testing/asserts.ts";
-
+import { listenAndServe, serve, Server } from 'https://deno.land/std/http/server.ts';
 import {ServerRequest, HTTPOptions, Middlewares} from './type.d.ts';
 import {
   acceptable,
@@ -8,18 +6,16 @@ import {
 import {Context} from './context.ts';
 
 export type Next = () => Promise<void>
-export type State = {
-  serve?: typeof serve 
-} 
 
-export class Application extends EventTarget {
+export class Application {
 
 	#middlewares: Middlewares[];
-  #server: typeof serve | undefined;
-	constructor(options?: State){
-	  super();
+  #serve: Server | undefined;
+	constructor({
+	  serve?: Server
+	}){
 		this.#middlewares = [];
-		this.#server = options?.serve
+		this.#serve = serve;
 	}
 
 	compose(middlewares: Middlewares[]) {
@@ -29,16 +25,13 @@ export class Application extends EventTarget {
 				if (i === middlewares.length) {
 					fn = next;
 				}
+				console.log(fn,)
 				if (!fn) {
 					return Promise.resolve();
 				}
-				try {
-          return Promise.resolve(fn(ctx, function () {
-            return dispatch(i+1);
-          }))
-        } catch (e) {
-          return Promise.reject(e)
-        }
+				return Promise.resolve(fn(ctx, function () {
+					return dispatch(i+1);
+				}))
 			}
 			return dispatch(0);
 		}
@@ -50,29 +43,27 @@ export class Application extends EventTarget {
 	use = (callback: Middlewares) =>  {
 		this.#middlewares.push(callback);
 	}	
-
-  #handleRequest = async (req: ServerRequest, server: Server) => {
+  #handleRequest = async (req: ServerRequest) => {
+		  console.log('server')
 			const ctx = new Context(this, req);
-			await this.compose(this.#middlewares)(ctx);
+			const compose = this.compose(this.#middlewares)	
+			await compose(ctx)
+			const respond = ctx.response.appResponse()
 			// is not websocket
-			const respond = ctx.response.appResponse();
 			if (!acceptable(req)) {
         await req.respond(respond);
-        assert(serve)
       }
-  }
-
+		}
 	async listen(options: HTTPOptions={port: 3000}, callback?: () => void) {
     callback && callback();
-    const server = this.#server?.(options) || serve(options);
-    try {
-      for await (const req of server) {
-        this.#handleRequest(req, server)      
-      }
-    } catch(e) {
-      throw Deno.errors.NotFound
+    console.log('listen')
+     
+    if (this.#serve) {
+      for await (const req of this.#serve) {
+        this.#handleRequest(req)
+      }  
+    } else {
+      listenAndServe(options, this.#handleRequest)
     }
-    
-      
 	}
 }

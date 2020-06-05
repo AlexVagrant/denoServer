@@ -6,9 +6,11 @@
   <body>
     performance
     performance
+    performance
   </body>
   <script>
     window.addEventListener("DOMContentLoaded", () => {
+      console.log('execute')
       ws = new WebSocket("ws://127.0.0.1:4000/ws");
       ws.addEventListener("open", onConnectionOpen);
       ws.addEventListener("message", onMessageReceived);

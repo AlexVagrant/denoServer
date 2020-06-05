@@ -1,13 +1,14 @@
-import { App, Router, Context } from '../mod.ts';
+import { App, Router, Context } from "../mod.ts";
 import {
   acceptWebSocket,
   acceptable,
   isWebSocketCloseEvent,
   WebSocket,
 } from "https://deno.land/std/ws/mod.ts";
-const  app = new App();
+const app = new App();
 const router = new Router();
 const route = router.routes();
+
 // app.use(async (ctx) => {
 //     ctx.response.headers.set('Content-Type', 'application/json');
 //     ctx.cookie.setCookie({
@@ -27,56 +28,55 @@ const route = router.routes();
 // })
 //
 
-
 async function chat(ws: WebSocket) {
-  const watcher = Deno.watchFs('./index.html');
-  let timer: undefined | number; 
+  let res = [];
+
   for await (let msg of ws) {
-    for await (const event of watcher) {
-        if (timer) {
-          clearTimeout(timer)
-        }
-        timer = setTimeout(async () => {
-          console.log('reload')
-          await ws.send('reload')
-        }, 100)
-    }
     if (isWebSocketCloseEvent(msg)) {
       // Take out user from usersMap
       break;
     }
+    const watcher = Deno.watchFs("./index.html");
+    for await (const event of watcher) {
+       
+    }
   }
+  
 }
 
-router.get('/ws', async (ctx: Context) => {
-  const { conn, r: bufReader, w: bufWriter, headers} = ctx.request.serverRequest;
+router.get("/ws", async (ctx: Context) => {
+  const { conn, r: bufReader, w: bufWriter, headers } = ctx.request.serverRequest;
   if (acceptable(ctx.request.serverRequest)) {
-    const sock = await acceptWebSocket({
-      conn,
-      bufReader,
-      bufWriter,
-      headers,
-    })
-    await chat(sock)
+    try {
+      acceptWebSocket({
+        conn,
+        bufReader,
+        bufWriter,
+        headers,
+      }).then(chat)
+    } catch (e) {
+      console.error('ws', e)
+    }
+    
   }
-})
+});
 
-router.get('/', async (ctx: Context) => {
-  const data = await Deno.readFile('./index.html');
-  ctx.response.headers.set('Content-Type', 'text/html;charset=utf-8');
+router.get("/", async (ctx: Context) => {
+  const data = await Deno.readFile("./index.html");
+  ctx.response.headers.set("Content-Type", "text/html;charset=utf-8");
   ctx.response.body = data;
-})
+});
 
-router.get('/api/upload', async (ctx) => {
-    ctx.response.headers.set('Content-Type', 'application/json; charset=utf-8');
-    ctx.response.body = {
-        message: "test",
-        data: {
-            name: "mary",
-            age: "13",
-        },
-    };
-})
+router.get("/api/upload", async (ctx) => {
+  ctx.response.headers.set("Content-Type", "application/json; charset=utf-8");
+  ctx.response.body = {
+    message: "test",
+    data: {
+      name: "mary",
+      age: "13",
+    },
+  };
+});
 
 app.use(route);
-await app.listen({ port: 4000, });
+await app.listen({ port: 4000 });

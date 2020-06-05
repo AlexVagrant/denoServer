@@ -41,6 +41,10 @@ function createMockRequest(
   } as any;
 }
 
+function reset() {
+  serverRequestStack = [];
+  requestResponseStack =  [];
+}
 const serve: typeof denoServe = function (
     addr: string | HTTPOptions,
 ): Server {
@@ -70,5 +74,30 @@ Deno.test({
     })
     await app.listen({port: 2999})
     assertEquals(count, 1)
+    reset();
   }
 })
+
+Deno.test({
+  name: 'Middlewares test',
+  async fn() {
+    serverRequestStack.push(createMockRequest());
+    let callback: number[] = []
+    const app = new Application({serve});
+    app.use(async (ctx, next) => {
+      callback.push(1)
+      await next();
+      callback.push(2)
+    })
+    app.use(async (ctx, next) => {
+      callback.push(3)
+      await next();
+      callback.push(4)
+    })
+    await app.listen({port: 2999});
+    assertEquals(callback, [1,3,4,2]);
+    reset();
+  }
+})
+
+
