@@ -47,16 +47,16 @@ async function chat(ws: WebSocket) {
 router.get("/ws", async (ctx: Context) => {
   const { conn, r: bufReader, w: bufWriter, headers } = ctx.request.serverRequest;
   if (acceptable(ctx.request.serverRequest)) {
-    try {
       acceptWebSocket({
         conn,
         bufReader,
         bufWriter,
         headers,
-      }).then(chat)
-    } catch (e) {
-      console.error('ws', e)
-    }
+      })
+      .then(chat)
+      .catch(e => {
+        console.error('ws', e)
+      })
     
   }
 });
