@@ -8,6 +8,7 @@ import {
 const app = new App();
 const router = new Router();
 const route = router.routes();
+let status = true;
 
 // app.use(async (ctx) => {
 //     ctx.response.headers.set('Content-Type', 'application/json');
@@ -30,18 +31,28 @@ const route = router.routes();
 
 async function chat(ws: WebSocket) {
   let res = [];
+  let timer: undefined | number;
+  const watcher = Deno.watchFs("./index.html");
 
   for await (let msg of ws) {
     if (isWebSocketCloseEvent(msg)) {
       // Take out user from usersMap
       break;
     }
-    const watcher = Deno.watchFs("./index.html");
+    console.log(msg)
+    if (msg === 'reload end') {
+      status = true;
+    }
     for await (const event of watcher) {
-       
+        if (status) {
+          console.log(status)
+          status = false;
+          await ws.send('reload')
+        }
+      //await ws.send('reload');
     }
   }
-  
+
 }
 
 router.get("/ws", async (ctx: Context) => {
@@ -55,9 +66,10 @@ router.get("/ws", async (ctx: Context) => {
       })
       .then(chat)
       .catch(e => {
+        // https://github.com/denoland/deno/issues/6002
         console.error('ws', e)
       })
-    
+
   }
 });
 
